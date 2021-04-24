@@ -25,6 +25,29 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
 }
 
+table {
+  font-size: 14px;
+  margin-bottom: 1em;
+  margin-top: 1em;
+}
+
+th {
+  text-align: left;
+}
+
+.advisories table td:nth-child(1),td:nth-child(2),td:nth-child(3) {
+  white-space: nowrap;
+}
+
+.yanked {
+  text-decoration: line-through;
+  color: #949494;
+}
+
+.advisory h1 p {
+  margin: 0;
+}
+
 main {
   flex-grow: 1;
 }
@@ -45,6 +68,12 @@ hr {
 
 header span, header time {
   color: #949494;
+}
+
+header p.id {
+  margin-top: 0.4em;
+  margin-bottom: 0;
+  font-weight: 700;
 }
 
 .logo-image {
@@ -110,4 +139,12 @@ tr:hover {
 th, td {
   box-shadow: 0px 0px 0px 1px rgba(148, 148, 148, 0.16);
   padding: 0.5em 1em;
+}
+
+main.advisory h3 {
+  margin-bottom: 0;
+}
+
+main.advisory ul {
+  margin-top:  0;
 }

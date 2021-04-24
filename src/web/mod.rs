@@ -27,6 +27,7 @@ struct AdvisoriesPerYear {
 struct AdvisoryTemplate<'a> {
     advisory: &'a rustsec::Advisory,
     rendered_description: String,
+    rendered_title: String,
 }
 
 /// Render all advisories using the Markdown template
@@ -46,10 +47,12 @@ pub fn render_advisories(output_folder: PathBuf) {
 
         let rendered_description =
             markdown_to_html(advisory.description(), &ComrakOptions::default());
+        let rendered_title = markdown_to_html(advisory.title(), &ComrakOptions::default());
 
         let advisory_tmpl = AdvisoryTemplate {
             advisory,
             rendered_description,
+            rendered_title,
         };
         fs::write(&output_path, advisory_tmpl.render().unwrap()).unwrap();
 

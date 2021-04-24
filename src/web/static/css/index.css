@@ -64,13 +64,12 @@ body > footer {
 }
 
 header h1 {
-  margin-top: 0.4em;
+  margin-top: 0;
   margin-bottom: 0;
   line-height: 1.2;
 }
 
 article header {
-  text-align: center;
   margin-bottom: 1.6em;
 }
 
@@ -98,12 +97,7 @@ nav, body > footer {
   align-items: center;
 }
 
-.archive h3 {
-  margin-top: 0;
-}
-.archive li {
-  list-style-type: none;
-}
-.archive a {
+.advisories a {
   font-weight: 500;
 }
+

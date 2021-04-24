@@ -1,42 +1,180 @@
 {% extends "base.html" %}
 
-{% block title %}About RustSec{% endblock %}
+{% block title %}{{ advisory.id() }}: {{ advisory.metadata.package }}: {{ advisory.title() }}{% endblock %}
 
 {% block content %}
-<main>
+<main class="advisory">
   <article>
     <header>
-      <h1>
-        <a href=".">
-          {{ advisory.id() }}: {{ advisory.metadata.package }}: {{ advisory.title() }}
-        </a>
-      </h1>
+      <p class="id">{{ advisory.id() }}</p>
+      <h1>{{ rendered_title|safe }}</h1>
       <time datetime="{{ advisory.date().as_str() }}">
-        {{ advisory.date() | friendly_date }}
+        Issued: {{ advisory.date() | friendly_date }}
       </time>
     </header>
+
+    {% if advisory.metadata.yanked %}
+    Note: This advisory has been yanked, and is kept only for reference.
+    {% endif %}
+
+    <h3 id="type">Type</h3>
+    {% match advisory.metadata.informational %}
+      {% when Some with (informational) %}
+        {{ informational.to_string() | capitalize }}
+      {% when None %}
+        Vulnerability
+    {% endmatch %}
+
+    {% match advisory.metadata.cvss %}
+      {% when Some with (cvss) %}
+        <h3 id="cvss">CVSS</h3>
+        CVSS v3.1: {{ cvss }}
+      {% when None %}
+    {% endmatch %}
+
+    <h3 id="package">Affected Package</h3>
+    {% match advisory.metadata.collection %}
+      {% when Some with (collection) %}
+        {% if collection.to_string() == "crates" %}
+          <code>{{ advisory.metadata.package }}</code> (<a href="https://crates.io/crates/{{ advisory.metadata.package }}">crates.io</a>)
+        {% else %}
+          <code>{{ advisory.metadata.package }}</code>
+        {% endif %}
+      {% when None %}
+        <code>{{ advisory.metadata.package }}</code>
+    {% endmatch %}
 
     <h3 id="description">Description</h3>
     {{ rendered_description|safe }}
 
     {% if advisory.metadata.url.is_some() %}
-    <h3 id="more-info">More Info</h3>
-    <p>
+      <h3 id="more-info">Additional Information</h3>
       <a href="{{ advisory.metadata.url.as_ref().unwrap() }}">
         {{ advisory.metadata.url.as_ref().unwrap() }}
       </a>
-    </p>
     {% endif %}
 
-    <h3 id="patched-versions">Patched Versions</h3>
+
+    <h3 id="patched-versions">Versions</h3>
+    Patched:
     <ul>
     {% if advisory.versions.patched.len() == 0 %}
-      <li>None!</li>
+      <li>None</li>
     {% endif %}
     {% for patched in advisory.versions.patched %}
       <li><code>{{ patched }}</code></li>
     {% endfor %}
     </ul>
+
+    {% if advisory.versions.unaffected.len() > 0 %}
+    Unaffected:
+    <ul>
+    {% for unaffected in advisory.versions.unaffected %}
+      <li><code>{{ unaffected }}</code></li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
+
+    {% if advisory.metadata.aliases.len() > 0 %}
+    <h3 id="aliases">Alias IDs</h3>
+    <ul>
+    {% for id in advisory.metadata.aliases %}
+      <li>
+      {% match id.url() %}
+        {% when Some with (url) %}
+          <a href ="{{ url }}">{{ id }}</a>
+        {% when None %}
+          {{ id }}
+      {% endmatch %}
+      </li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if advisory.metadata.related.len() > 0 %}
+    <h3 id="related">Related</h3>
+    <ul>
+    {% for id in advisory.metadata.related %}
+      <li>
+      {% match id.url() %}
+        {% when Some with (url) %}
+          <a href ="{{ url }}">{{ id }}</a>
+        {% when None %}
+          {{ id }}
+      {% endmatch %}
+      </li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h3 id="affected">Affected</h3>
+
+    {% match advisory.affected %}
+      {% when Some with (affected) %}
+      {% if affected.arch.len() > 0 %}
+      Architectures:
+      <ul>
+      {% for arch in affected.arch %}
+        <li><code>{{ arch }}</code></li>
+      {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if affected.os.len() > 0 %}
+      Operating Systems:
+      <ul>
+      {% for os in affected.os %}
+        <li><code>{{ os }}</code></li>
+      {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if affected.functions.len() > 0 %}
+      Functions:
+      <ul>
+      {% for function in affected.functions %}
+
+      {% for version_req in function.1 %}
+        <li><code>{{ function.0 }}</code> for versions <code>{{ version_req }}</code></li>
+      {% endfor %}
+
+
+      {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% when None %}
+    {% endmatch %}
+
+
+    {% if advisory.metadata.categories.len() > 0 %}
+    <h3 id="categories">Categories</h3>
+    <ul>
+    {% for category in advisory.metadata.categories %}
+      <li>{{ category.to_string() }}</li>
+    {% endfor %}
+   </ul>
+    {% endif %}
+
+    {% if advisory.metadata.keywords.len() > 0 %}
+    <h3 id="keywords">Keywords</h3>
+    <ul>
+    {% for keyword in advisory.metadata.keywords %}
+      <li>{{ keyword.as_str() }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h3 id="more">More</h3>
+    <ul>
+    {% match advisory.metadata.collection %}
+      {% when Some with (collection) %}
+        <li><a href="https://github.com/RustSec/advisory-db/commits/main/{{ collection }}/{{ advisory.metadata.package }}/{{ advisory.id() }}.md">Advisory History</a></li>
+        <li><a href="https://github.com/RustSec/advisory-db/edit/main/{{ collection }}/{{ advisory.metadata.package }}/{{ advisory.id() }}.md">Edit Advisory</a></li>
+      {% when None %}
+    {% endmatch %}
+   </ul>
 
   </article>
 </main>
