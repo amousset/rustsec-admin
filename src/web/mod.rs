@@ -12,6 +12,7 @@ use atom_syndication::{
     CategoryBuilder, ContentBuilder, Entry, EntryBuilder, FeedBuilder, FixedDateTime, LinkBuilder,
     PersonBuilder,
 };
+use chrono::{Date, Duration, NaiveDate, Utc};
 use comrak::{markdown_to_html, ComrakOptions};
 use rust_embed::RustEmbed;
 use xml::escape::escape_str_attribute;
@@ -119,22 +120,38 @@ pub fn render_advisories(output_folder: PathBuf) {
     let advisories_page = advisories_page_tmpl.render().unwrap();
     fs::write(advisories_folder.join("index.html"), advisories_page).unwrap();
 
-    let feed_path = output_folder.join("feed.xml");
-    // include 25 latest advisories
-    let feed_size = 25;
-    let feed_advisories = if advisories.len() < feed_size {
-        &advisories
-    } else {
-        &advisories[..feed_size]
-    };
-    render_feed(&feed_path, feed_advisories);
-    status_ok!("Rendered", "{}", feed_path.display());
-
     status_ok!(
         "Completed",
         "{} advisories rendered as HTML",
         advisories.len()
     );
+
+    // Feed
+    let feed_path = output_folder.join("feed.xml");
+    let min_feed_len = 10;
+    let last_week_len = advisories
+        .iter()
+        .take_while(|a| {
+            Date::from_utc(
+                NaiveDate::parse_from_str(a.date().as_str(), "%Y-%m-%d").unwrap(),
+                Utc,
+            ) > Utc::today() - Duration::days(8)
+        })
+        .count();
+
+    // include max(latest week of advisories, 10 latest advisories)
+    // the goal is not to miss a vulnerability in case of burst
+    // and to never have an empty feed.
+    let len = if advisories.len() < min_feed_len {
+        advisories.len()
+    } else if last_week_len > min_feed_len {
+        last_week_len
+    } else {
+        min_feed_len
+    };
+    render_feed(&feed_path, &advisories[..len]);
+    status_ok!("Rendered", "{}", feed_path.display());
+    status_ok!("Completed", "{} advisories rendered in atom feed", len);
 }
 
 /// Title with the id, the package name and the advisory type
