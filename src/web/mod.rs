@@ -121,7 +121,13 @@ pub fn render_advisories(output_folder: PathBuf) {
 
     let feed_path = output_folder.join("feed.xml");
     // include 25 latest advisories
-    render_feed(&feed_path, 251, advisories.clone());
+    let feed_size = 25;
+    let feed_advisories = if advisories.len() < feed_size {
+        &advisories
+    } else {
+        &advisories[..feed_size]
+    };
+    render_feed(&feed_path, feed_advisories);
     status_ok!("Rendered", "{}", feed_path.display());
 
     status_ok!(
@@ -150,7 +156,7 @@ fn title_type(advisory: &rustsec::Advisory) -> String {
 }
 
 /// Renders an Atom feed of advisories
-fn render_feed(output_path: &Path, feed_length: usize, advisories: Vec<rustsec::Advisory>) {
+fn render_feed(output_path: &Path, advisories: &[rustsec::Advisory]) {
     let mut entries: Vec<Entry> = vec![];
     let author = PersonBuilder::default().name("RustSec").build().unwrap();
 
@@ -158,7 +164,7 @@ fn render_feed(output_path: &Path, feed_length: usize, advisories: Vec<rustsec::
     let latest_advisory_date =
         advisories.first().unwrap().date().as_str().to_owned() + "T00:00:00+00:00";
 
-    for advisory in advisories.iter().take(feed_length) {
+    for advisory in advisories {
         let escaped_title_type = escape_str_attribute(&title_type(advisory)).into_owned();
         let escaped_title = escape_str_attribute(advisory.title()).into_owned();
         let date_time = advisory.date().as_str().to_owned() + "T00:00:00+00:00";
